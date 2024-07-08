@@ -19,10 +19,13 @@ set "executable_name=a.exe"
 set "compiler_options=/EHsc /nologo /W4 /external:W0 /MP /MTd /std:c17"
 set "debug_options=/Od /Zi"
 set "release_options=/O2"
+
+:: You should change these paths to match your raylib directory
 set "includes=/external:IC:/Dev/_libraries/raylib/include"
+set "raylib_path=C:/Dev/_libraries/raylib/lib/raylib.lib
+
 set build_result=0
 
-:: Regular build path
 echo Building !executable_name!...
 
 set "build_options="
@@ -32,7 +35,8 @@ if "%~1"=="-r" (
     set "build_options=!debug_options!"
 )
 
-cl !compiler_options! !build_options! !includes! src\main.c /Fe!executable_name! /link /NODEFAULTLIB:LIBCMTD "C:/Dev/_libraries/raylib/lib/raylib.lib" winmm.lib gdi32.lib User32.lib Shell32.lib msvcrt.lib
+
+cl !compiler_options! !build_options! !includes! src\main.c /Fe!executable_name! /link /NODEFAULTLIB:LIBCMTD !raylib_path! winmm.lib gdi32.lib User32.lib Shell32.lib msvcrt.lib
 
 if !ERRORLEVEL! neq 0 (
     set build_result=1
