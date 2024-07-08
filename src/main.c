@@ -116,26 +116,19 @@ void ship_update(Ship* ship) {
         ship->position.x += SHIP_SPEED;
         updated = 1;
     }
-    // if(IsKeyDown(KEY_W)) {
-    //     ship->position.y -= SHIP_SPEED;
-    //     updated = 1;
-    // }
-    // if(IsKeyDown(KEY_S)) {
-    //     ship->position.y += SHIP_SPEED;
-    //     updated = 1;
-    // }
 
     if(updated == 1) {
+        //Update the offsets of our triangle vertices according to our ship's updated position
         ship->vertices[0] = (Vector2){ship->position.x, ship->position.y - SHIP_TRIANGLE_SIZE};
         ship->vertices[1] = (Vector2){ship->position.x - SHIP_TRIANGLE_SIZE, ship->position.y + SHIP_TRIANGLE_SIZE};
         ship->vertices[2] = (Vector2){ship->position.x + SHIP_TRIANGLE_SIZE, ship->position.y + SHIP_TRIANGLE_SIZE};
     }
 
+    //Fire the laser if we press space
     if(IsKeyPressed(KEY_SPACE)) {
         game.lasers[game.laser_index].state = ENTITY_STATE_ACTIVE;
         game.lasers[game.laser_index].position = ship->vertices[0];
         ++game.laser_index;
-        //printf("Laser fired.\n");
     }
 }
 
@@ -143,8 +136,11 @@ void ship_render(Ship* ship) {
     DrawTriangle(ship->vertices[0], ship->vertices[1], ship->vertices[2], RED);
 }
 
+//We can use this function to spawn one to many asteroids. We use it to initialize all asteroids at the beginning, and also to respawn an asteroid that has gone
+//off-screen or been destroyed with a laser
 void asteroids_spawn(Asteroid* asteroids, u32 count) {
     for(u32 i = 0; i < count; ++i) {
+        //We choose a random type of asteroid, either small or large for now. These have different default ranges for their sizes/speeds.
         asteroids[i].type = GetRandomValue(0, MAX_ASTEROID_TYPES - 1);
         switch(asteroids[i].type) {
             case ASTEROID_TYPE_SMALL: {
@@ -156,6 +152,7 @@ void asteroids_spawn(Asteroid* asteroids, u32 count) {
                 asteroids[i].speed = GetRandomValue(LARGE_ASTEROID_MIN_SPEED, LARGE_ASTEROID_MAX_SPEED);
             } break;
         }
+        //We spawn the asteroid in a random location off-screen, taking into account the radius of the asteroid so we don't spawn onto the screen out of nowhere.
         asteroids[i].position = (Vector2){GetRandomValue(0, WINDOW_WIDTH), GetRandomValue(0 - asteroids[i].radius, -(WINDOW_HEIGHT / 2))};
         asteroids[i].state = ENTITY_STATE_ACTIVE;
     }
@@ -166,11 +163,13 @@ void asteroids_update(Asteroid* asteroids) {
         switch(asteroids[i].state) {
             case ENTITY_STATE_ACTIVE: {
                 asteroids[i].position.y += asteroids[i].speed;
+                //Check whether the asteroid has left the bottom of the screen, set it to inactive if it has (this will queue it to be respawned the next time this function is called)
                 if(asteroids[i].position.y > WINDOW_HEIGHT + asteroids[i].radius) {
                     asteroids[i].state = ENTITY_STATE_INACTIVE;
                 }
             } break;
             case ENTITY_STATE_INACTIVE: {
+                //Respawn any inactive asteroids at the top of the screen
                 asteroids_spawn(&asteroids[i], 1);
             } break;
         }
@@ -190,7 +189,6 @@ void lasers_init(Laser* lasers) {
 }
 
 void lasers_update(Laser* lasers) {
-
     //Update the y coordinate of each active laser. "Active" lasers are lasers that we have fired, but have not yet collided with any asteroids or gone off-screen
     for(u32 i = 0; i < MAX_LASER_COUNT; ++i) {
         if(lasers[i].state == ENTITY_STATE_ACTIVE) {
@@ -220,7 +218,6 @@ void render() {
     BeginDrawing();
     ClearBackground(BLACK);
 
-    //Draw our ship
     ship_render(&game.ship);
     asteroids_render(game.asteroids);
     lasers_render(game.lasers);
@@ -232,6 +229,7 @@ void check_collisions() {
     for(u32 i = 0; i < MAX_LASER_COUNT; ++i) {
         if(game.lasers[i].state == ENTITY_STATE_ACTIVE) {
             for(u32 j = 0; j < MAX_ASTEROID_COUNT; ++j) {
+                //Check collisions between lasers and asteroids, if we hit an asteroid, set it to inactive so it is repsawned next frame
                 if(CheckCollisionPointCircle(game.lasers[i].position, game.asteroids[j].position, game.asteroids[j].radius)) {
                     game.lasers[i].state == ENTITY_STATE_INACTIVE;
                     game.asteroids[j].state == ENTITY_STATE_INACTIVE;
