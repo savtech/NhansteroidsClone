@@ -1,0 +1,9 @@
+/.git
+/.vs
+/.vscode
+/build
+/include
+/lib
+*.exe
+*.pdb
+*.obj
